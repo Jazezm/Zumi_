@@ -406,6 +406,26 @@
       else window.addEventListener('load', res);
     });
 
+    // Try to use an animated GIF loader if present. This runs in parallel and does
+    // not block waiting for other resources — it simply swaps the spinner for the GIF
+    // as soon as it becomes available.
+    (function tryGif() {
+      const gifEl = document.querySelector('.preloader-gif');
+      const spinnerEl = document.querySelector('.spinner');
+      if (!gifEl) return;
+      const probe = new Image();
+      probe.onload = () => {
+        // show gif and hide spinner
+        gifEl.style.display = 'block';
+        gifEl.classList.add('preloader-gif-visible');
+        if (spinnerEl) spinnerEl.style.display = 'none';
+      };
+      probe.onerror = () => {
+        // leave the spinner as-is
+      };
+      probe.src = gifEl.getAttribute('src');
+    })();
+
     Promise.all([preloadAllImages(8000), windowLoad]).then(() => {
       setTimeout(hidePreloader, 300);
     });
