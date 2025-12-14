@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="100%" height="100%" fill="#081018"/>
+  <g fill="#f97316" opacity="0.78">
+    <rect x="80" y="40" width="600" height="320" rx="12"/>
+  </g>
+  <text x="50" y="460" fill="#9aa0a6" font-family="Inter, Arial" font-size="20">Placeholder shot 3</text>
+</svg>
