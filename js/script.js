@@ -343,30 +343,77 @@
     }
   });
 
-  // --- Preloader: hide when all assets loaded (fallback timeout included) ---
+  // --- Preloader: ensure all images + window load before hiding (with fallback) ---
   (function () {
     const pre = document.getElementById('preloader');
     if (!pre) return;
 
     function hidePreloader() {
+      if (!pre) return;
       pre.classList.add('preloader--hidden');
       pre.setAttribute('aria-hidden', 'true');
-      // remove from DOM after transition
       pre.addEventListener('transitionend', () => {
         if (pre && pre.parentNode) pre.parentNode.removeChild(pre);
       }, { once: true });
     }
 
-    // Hide when window load fires (images, fonts, etc.)
-    window.addEventListener('load', () => {
-      // small delay so the spinner doesn't blink too briefly on very fast loads
+    function preloadAllImages(timeout = 8000) {
+      const urls = new Set();
+      // <img> tags
+      Array.from(document.images).forEach(img => {
+        const src = img.currentSrc || img.src || '';
+        if (src && !src.startsWith('data:')) urls.add(src);
+      });
+
+      // background images (computed styles)
+      const all = Array.from(document.querySelectorAll('*'));
+      all.forEach(el => {
+        const bg = getComputedStyle(el).backgroundImage;
+        if (!bg || bg === 'none') return;
+        const matches = [...bg.matchAll(/url\((?:"|'|)(.*?)(?:"|'|)\)/g)];
+        matches.forEach(m => {
+          const u = m[1];
+          if (u && !u.startsWith('data:')) urls.add(u);
+        });
+      });
+
+      if (urls.size === 0) return Promise.resolve();
+
+      return new Promise(resolve => {
+        let remaining = urls.size;
+        let done = false;
+        const timer = setTimeout(() => { if (!done) { done = true; resolve(); } }, timeout);
+        urls.forEach(u => {
+          const img = new Image();
+          img.onload = img.onerror = () => {
+            remaining -= 1;
+            if (!done && remaining <= 0) {
+              clearTimeout(timer);
+              done = true;
+              resolve();
+            }
+          };
+          try { img.src = u; } catch (e) {
+            remaining -= 1;
+            if (!done && remaining <= 0) { clearTimeout(timer); done = true; resolve(); }
+          }
+        });
+      });
+    }
+
+    const windowLoad = new Promise(res => {
+      if (document.readyState === 'complete') res();
+      else window.addEventListener('load', res);
+    });
+
+    Promise.all([preloadAllImages(8000), windowLoad]).then(() => {
       setTimeout(hidePreloader, 300);
     });
 
-    // Fallback: ensure it doesn't hang longer than 7s
+    // Global fallback: don't block forever
     setTimeout(() => {
       if (document.getElementById('preloader')) hidePreloader();
-    }, 7000);
+    }, 12000);
   })();
 
   // ===== Page Wipe Navigation =====
