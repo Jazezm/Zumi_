@@ -343,6 +343,32 @@
     }
   });
 
+  // --- Preloader: hide when all assets loaded (fallback timeout included) ---
+  (function () {
+    const pre = document.getElementById('preloader');
+    if (!pre) return;
+
+    function hidePreloader() {
+      pre.classList.add('preloader--hidden');
+      pre.setAttribute('aria-hidden', 'true');
+      // remove from DOM after transition
+      pre.addEventListener('transitionend', () => {
+        if (pre && pre.parentNode) pre.parentNode.removeChild(pre);
+      }, { once: true });
+    }
+
+    // Hide when window load fires (images, fonts, etc.)
+    window.addEventListener('load', () => {
+      // small delay so the spinner doesn't blink too briefly on very fast loads
+      setTimeout(hidePreloader, 300);
+    });
+
+    // Fallback: ensure it doesn't hang longer than 7s
+    setTimeout(() => {
+      if (document.getElementById('preloader')) hidePreloader();
+    }, 7000);
+  })();
+
   // ===== Page Wipe Navigation =====
   (function () {
     const DURATION = parseInt(
